@@ -61,7 +61,7 @@ void ActivePlayPause(void) {
 void ActiveStop(void) {
 	BSP_LCD_SetTextColor(LCD_COLOR_WHITE);
 	
-	BSP_LCD_FillRect(0.5*LCD_X_SIZE - 17, 0.75*LCD_Y_SIZE - 17, 34, 34);
+	BSP_LCD_FillRect(0.5*LCD_X_SIZE - 17, 0.65*LCD_Y_SIZE - 17, 34, 34);
 }
 
 void ActivePrevious(void) {
@@ -108,7 +108,18 @@ void ActiveNext(void) {
 	free(points);
 }
 
-void DrawPlayer(int flacIndex, int total, char *name, PlayerState playerState) {
+void ActiveVolumeUp(void) {
+	BSP_LCD_SetTextColor(LCD_COLOR_WHITE);
+	BSP_LCD_FillRect(0.65*LCD_X_SIZE - 20 + 2, 0.90*LCD_Y_SIZE, 36, 4);
+	BSP_LCD_FillRect(0.65*LCD_X_SIZE - 10 + 8, 0.90*LCD_Y_SIZE - 20 + 4, 4, 36);
+}
+
+void ActiveVolumeDown(void) {
+	BSP_LCD_SetTextColor(LCD_COLOR_WHITE);
+	BSP_LCD_FillRect(0.35*LCD_X_SIZE - 20 + 2, 0.90*LCD_Y_SIZE, 36, 4);
+}
+
+void DrawPlayer(int flacIndex, int total, char *name, PlayerState playerState, int volume) {
 	
 	/* INFO */
 	BSP_LCD_SetFont(&Font16);
@@ -130,12 +141,27 @@ void DrawPlayer(int flacIndex, int total, char *name, PlayerState playerState) {
 	else sprintf(index, "%d/%d", 0, 0);
 	BSP_LCD_DisplayStringAt(0.27*LCD_X_SIZE, 0.09*LCD_Y_SIZE, (uint8_t *) index, LEFT_MODE);
 	free(index);
+	
+	//Volume
+	char *volumeString = malloc(3*sizeof(char));
+	if(volume == 0 || volume == 100) {
+		BSP_LCD_DisplayStringAt(0.5*LCD_X_SIZE - 10, 0.85*LCD_Y_SIZE + 8, (uint8_t *) "00", LEFT_MODE);
 
+	}
+	else {
+		sprintf(volumeString, "%d", volume, 3);
+		BSP_LCD_DisplayStringAt(0.5*LCD_X_SIZE - 10, 0.85*LCD_Y_SIZE + 8, (uint8_t *) volumeString, LEFT_MODE);
+
+	}
+	
 	/* SEPARATORS */
 
 	BSP_LCD_FillRect(0.25*LCD_X_SIZE - 2, 0, 4, LCD_Y_SIZE);
 	BSP_LCD_FillRect(0.75*LCD_X_SIZE - 2, 0, 4, LCD_Y_SIZE);
 	BSP_LCD_FillRect(0.25*LCD_X_SIZE, 0.5*LCD_Y_SIZE - 2, 0.5*LCD_X_SIZE, 4);
+	BSP_LCD_FillRect(0.25*LCD_X_SIZE, 0.8*LCD_Y_SIZE - 2, 0.5*LCD_X_SIZE, 4);
+	BSP_LCD_FillRect(0.45*LCD_X_SIZE - 2, 0.8*LCD_Y_SIZE - 2, 4, 0.2*LCD_Y_SIZE + 3);
+	BSP_LCD_FillRect(0.55*LCD_X_SIZE - 2, 0.8*LCD_Y_SIZE - 2, 4, 0.2*LCD_Y_SIZE + 3);
 	
 	/* ICONS */
 
@@ -171,7 +197,7 @@ void DrawPlayer(int flacIndex, int total, char *name, PlayerState playerState) {
 	}
 	
 	//Stop icon
-	BSP_LCD_FillRect(0.5*LCD_X_SIZE - 20, 0.75*LCD_Y_SIZE - 20, 40, 40);
+	BSP_LCD_FillRect(0.5*LCD_X_SIZE - 20, 0.65*LCD_Y_SIZE - 20, 40, 40);
 
 	//Previous icon
 	BSP_LCD_FillRect(0.125*LCD_X_SIZE - (40*sqrt(3)/4 + 8)/2, 0.5*LCD_Y_SIZE - 20, 8, 40);
@@ -205,6 +231,13 @@ void DrawPlayer(int flacIndex, int total, char *name, PlayerState playerState) {
 	};
 	BSP_LCD_FillPolygon(points, 3);
 
+	//VolumeUp
+	BSP_LCD_FillRect(0.65*LCD_X_SIZE - 20, 0.90*LCD_Y_SIZE - 2, 40, 8);
+	BSP_LCD_FillRect(0.65*LCD_X_SIZE - 10 + 6, 0.90*LCD_Y_SIZE - 20 + 2, 8, 40);
+	
+	//VolumeDown
+	BSP_LCD_FillRect(0.35*LCD_X_SIZE - 20, 0.90*LCD_Y_SIZE - 2, 40, 8);
+
 	free(points);
 }
 
@@ -221,7 +254,7 @@ TouchState TouchInput(void) {
 			return PLAYPAUSE;
 		}
 		/* Stop */
-		else if(XPos >= 0.25*LCD_X_SIZE && 0.75*LCD_X_SIZE >= XPos && YPos > 0.5*LCD_Y_SIZE ) {
+		else if(XPos >= 0.25*LCD_X_SIZE && 0.75*LCD_X_SIZE >= XPos && YPos > 0.5*LCD_Y_SIZE && 0.8*LCD_Y_SIZE > YPos) {
 			return STOP;
 		}
 		/* Previous */
@@ -229,8 +262,16 @@ TouchState TouchInput(void) {
 			return PREVIOUS;
 		}
 		/* Next */
-		else {
+		else if(0.75*LCD_X_SIZE < XPos) {
 			return NEXT;
+		}
+		/* VolumeUp */
+		else if(XPos >= 0.55*LCD_X_SIZE && 0.75*LCD_X_SIZE >= XPos && YPos > 0.8*LCD_Y_SIZE){
+			return VOLUMEUP;
+		}
+		/* VolumeDown */
+		else if(XPos >= 0.25*LCD_X_SIZE && 0.45*LCD_X_SIZE >= XPos && YPos > 0.8*LCD_Y_SIZE){
+			return VOLUMEDOWN;
 		}
 	}
 	

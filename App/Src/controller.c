@@ -59,11 +59,12 @@ void ControllerTask(void) {
 	
 	InitAudio();
 
+	/* Fix the goddamn screen */
 	LCDStart();
 	LCDStart();
 	
 	for(;;) {
-		DrawPlayer(fileIndex, files.total, cutName(files.names[fileIndex]), GetPlayerState());
+		DrawPlayer(fileIndex, files.total, cutName(files.names[fileIndex]), GetPlayerState(), GetVolume());
 		
 		switch(TouchInput()) {
 			case PLAYPAUSE:
@@ -118,6 +119,16 @@ void ControllerTask(void) {
 					Stop();
 					if(files.total > 0) Play(getFilePath());
 				}
+				vTaskDelay(150);
+				break;
+			case VOLUMEUP:
+				ActiveVolumeUp();
+				VolumeUp();
+				vTaskDelay(150);
+				break;
+			case VOLUMEDOWN:
+				ActiveVolumeDown();
+				VolumeDown();
 				vTaskDelay(150);
 				break;
 			default:

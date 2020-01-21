@@ -19,4 +19,10 @@ void Stop(void);
 
 void Reset(void);
 
+void VolumeUp(void);
+
+void VolumeDown(void);
+
+int GetVolume(void);
+
 #endif

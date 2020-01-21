@@ -29,6 +29,7 @@ static PlayerState playerState = STOPPED;
 
 static FIL file;
 static HMP3Decoder decoder;
+static int volume = 50;
 
 //Reached the end of outBuffer, time to fill the second half of outBuffer
 void BSP_AUDIO_OUT_TransferComplete_CallBack(void)
@@ -52,7 +53,7 @@ void BSP_AUDIO_OUT_HalfTransfer_CallBack(void)
 
 void InitAudio(void) {
 	xprintf("INITIALIZING AUDIO CODEC...\n");
-	if(BSP_AUDIO_OUT_Init(OUTPUT_DEVICE_HEADPHONE1, 60, AUDIO_FREQUENCY_44K) == 0) {
+	if(BSP_AUDIO_OUT_Init(OUTPUT_DEVICE_HEADPHONE1, volume, AUDIO_FREQUENCY_44K) == 0) {
 		xprintf("AUDIO INIT OK\n");
 	}
 	else {
@@ -177,4 +178,18 @@ int ProcessFrame() {
 	readPtr = readBuffer;
 
     return 0;
+}
+
+void VolumeUp(void) {
+	if(volume != 100) volume += 10;
+	BSP_AUDIO_OUT_SetVolume(volume);
+}
+
+void VolumeDown(void) {
+	if(volume != 0) volume -= 10;
+	BSP_AUDIO_OUT_SetVolume(volume);
+}
+
+int GetVolume(void) {
+	return volume;
 }
