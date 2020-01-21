@@ -2,7 +2,6 @@
 
 #include "Drivers/BSP/STM32746G-Discovery/stm32746g_discovery_lcd.h"
 #include "Drivers/BSP/STM32746G-Discovery/stm32746g_discovery_ts.h"
-#include "Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS/cmsis_os.h"
 #include "Utilities/Fonts/fonts.h"
 #include <math.h>
 #include <stdbool.h>
@@ -127,7 +126,8 @@ void DrawPlayer(int flacIndex, int total, char *name, PlayerState playerState) {
 	
 	//Index / Total files
 	char *index = malloc(10*sizeof(char));
-	sprintf(index, "%d/%d", flacIndex + 1, total);
+	if(total > 0) sprintf(index, "%d/%d", flacIndex + 1, total);
+	else sprintf(index, "%d/%d", 0, 0);
 	BSP_LCD_DisplayStringAt(0.27*LCD_X_SIZE, 0.09*LCD_Y_SIZE, (uint8_t *) index, LEFT_MODE);
 	free(index);
 
@@ -209,7 +209,7 @@ void DrawPlayer(int flacIndex, int total, char *name, PlayerState playerState) {
 }
 
 //Checks for touch input
-Touched TouchInput(void) {
+TouchState TouchInput(void) {
     TS_StateTypeDef TS_State;
     BSP_TS_GetState(&TS_State);
 	
@@ -270,13 +270,10 @@ void LCDStart(void) {
 		exit(1);
 	}
 	
+	/* Fix the goddamn screen */
 	BSP_LCD_SelectLayer(0);
-	/*BSP_LCD_Clear(LCD_COLOR_BLACK);
+	BSP_LCD_Clear(LCD_COLOR_BLACK);
 	vTaskDelay(100);
 	BSP_LCD_Clear(LCD_COLOR_WHITE);
-	vTaskDelay(1000);
-	BSP_LCD_Clear(LCD_COLOR_BLACK);
-	vTaskDelay(1000);
-	BSP_LCD_Clear(LCD_COLOR_WHITE);
-	*/
+	vTaskDelay(100);
 }

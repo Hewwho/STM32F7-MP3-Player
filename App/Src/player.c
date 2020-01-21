@@ -46,14 +46,13 @@ void BSP_AUDIO_OUT_HalfTransfer_CallBack(void)
     buf_offs = BUFFER_OFFSET_HALF;
 	if(ProcessFrame() != 0)
 	{
-		xprintf("EOF\n");
 		TrackFinished();
 	}
 }
 
 void InitAudio(void) {
 	xprintf("INITIALIZING AUDIO CODEC...\n");
-	if(BSP_AUDIO_OUT_Init(OUTPUT_DEVICE_HEADPHONE1, 40, AUDIO_FREQUENCY_11K) == 0) {
+	if(BSP_AUDIO_OUT_Init(OUTPUT_DEVICE_HEADPHONE1, 60, AUDIO_FREQUENCY_44K) == 0) {
 		xprintf("AUDIO INIT OK\n");
 	}
 	else {
@@ -88,15 +87,23 @@ void Play(const char *name) {
 	//Filling both halves of outBuffer at the start
 	buf_offs = BUFFER_OFFSET_HALF;
 	if(ProcessFrame()) {
-		xprintf("EOF\n");
 		TrackFinished();
 	}
 	buf_offs = BUFFER_OFFSET_FULL;
 	if(ProcessFrame()) {
-		xprintf("EOF\n");
 		TrackFinished();
 	}
 	buf_offs = BUFFER_OFFSET_NONE;
+	
+	MP3FrameInfo mp3FrameInfo;
+	MP3GetLastFrameInfo(decoder, &mp3FrameInfo);
+	//Set appropriate frequency
+	if(mp3FrameInfo.samprate/1000 == 8) BSP_AUDIO_OUT_SetFrequency(AUDIO_FREQUENCY_8K);
+	else if(mp3FrameInfo.samprate/1000 == 11) BSP_AUDIO_OUT_SetFrequency(AUDIO_FREQUENCY_11K);
+	else if(mp3FrameInfo.samprate/1000 == 16) BSP_AUDIO_OUT_SetFrequency(AUDIO_FREQUENCY_16K);
+	else if(mp3FrameInfo.samprate/1000 == 22) BSP_AUDIO_OUT_SetFrequency(AUDIO_FREQUENCY_22K);
+	else if(mp3FrameInfo.samprate/1000 == 44) BSP_AUDIO_OUT_SetFrequency(AUDIO_FREQUENCY_44K);
+	else if(mp3FrameInfo.samprate/1000 == 48) BSP_AUDIO_OUT_SetFrequency(AUDIO_FREQUENCY_48K);
 	
 	BSP_AUDIO_OUT_Play((uint16_t *) outBuffer, OUT_BUFFER_SIZE);
 	BSP_AUDIO_OUT_Resume();
@@ -166,7 +173,7 @@ int ProcessFrame() {
 	
 	//Add the total of bytes read to what was left before
 	bytesLeft += bytesRead;
-	//Move the readPtr back to the beginning of readBuffer
+	//Move readPtr back to the beginning of readBuffer
 	readPtr = readBuffer;
 
     return 0;
