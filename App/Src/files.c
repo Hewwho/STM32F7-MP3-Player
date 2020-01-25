@@ -3,7 +3,7 @@
 #include "Middlewares/Third_Party/FatFs/src/ff.h"
 
 //Used for cheking if a file is .mp3
-static const char *GetExtension(const char *filename) {
+static const char * GetExtension(const char *filename) {
     const char *dot = strrchr(filename, '.');
     if(!dot || dot == filename) return "";
     return dot + 1;

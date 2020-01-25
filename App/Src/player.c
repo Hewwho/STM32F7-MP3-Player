@@ -10,12 +10,18 @@
 static char outBuffer[OUT_BUFFER_SIZE];
 
 #define READ_BUFFER_SIZE 2 * MAINBUF_SIZE
-//Buffer for reading from the given file
+//Buffer used for storing information read from the given file
 static unsigned char readBuffer[READ_BUFFER_SIZE];
-//Pointer inside the readBuffer
+//Pointer inside readBuffer
 static uint8_t *readPtr;
-//Bytes left (to be decoded) in the readBuffer
+//Bytes left (to be decoded) in readBuffer
 static int bytesLeft;
+
+static PlayerState playerState = STOPPED;
+
+static FIL file;
+static HMP3Decoder decoder;
+static int volume = 50;
 
 typedef enum {
   BUFFER_OFFSET_NONE = 0,  
@@ -25,27 +31,21 @@ typedef enum {
 
 static uint8_t buf_offs;
 
-static PlayerState playerState = STOPPED;
-
-static FIL file;
-static HMP3Decoder decoder;
-static int volume = 50;
-
-//Reached the end of outBuffer, time to fill the second half of outBuffer
-void BSP_AUDIO_OUT_TransferComplete_CallBack(void)
-{
-    buf_offs = BUFFER_OFFSET_FULL;
-	if(ProcessFrame() != 0)
+//Reached the first half of outBuffer, time to fill the first half of outBuffer
+void BSP_AUDIO_OUT_HalfTransfer_CallBack(void)
+{ 
+    buf_offs = BUFFER_OFFSET_HALF;
+	if(ProcessFrame() == EOF)
 	{
 		TrackFinished();
 	}
 }
 
-//Reached the first half of outBuffer, time to fill the first half of outBuffer
-void BSP_AUDIO_OUT_HalfTransfer_CallBack(void)
-{ 
-    buf_offs = BUFFER_OFFSET_HALF;
-	if(ProcessFrame() != 0)
+//Reached the end of outBuffer, time to fill the second half of outBuffer
+void BSP_AUDIO_OUT_TransferComplete_CallBack(void)
+{
+    buf_offs = BUFFER_OFFSET_FULL;
+	if(ProcessFrame() == EOF)
 	{
 		TrackFinished();
 	}
@@ -81,17 +81,17 @@ void Play(const char *name) {
 	
 	//Filling readBuffer for the first time
 	if(f_read(&file, readPtr, READ_BUFFER_SIZE, &bytesLeft)) {
-        xprintf("ERROR WHILE READING FROM THE FILE\n");
-        exit(1);
-    }
+		xprintf("ERROR WHILE READING FROM THE FILE\n");
+		exit(1);
+	}
 	
 	//Filling both halves of outBuffer at the start
 	buf_offs = BUFFER_OFFSET_HALF;
-	if(ProcessFrame()) {
+	if(ProcessFrame() == EOF) {
 		TrackFinished();
 	}
 	buf_offs = BUFFER_OFFSET_FULL;
-	if(ProcessFrame()) {
+	if(ProcessFrame() == EOF) {
 		TrackFinished();
 	}
 	buf_offs = BUFFER_OFFSET_NONE;
@@ -139,9 +139,9 @@ void Reset(void) {
 int ProcessFrame() {
 	//Decoding one frame from readBuffer
 	short frame[MAX_DECODED_FRAME_SIZE];
-	if (MP3Decode(decoder, (unsigned char **) &readPtr, (int *) &bytesLeft, frame, 0)) {
+	if(MP3Decode(decoder, (unsigned char **) &readPtr, (int *) &bytesLeft, frame, 0)) {
 		xprintf("ERROR WHILE DECODING A FRAME\n");
-		return -1;
+		exit(1);
 	}
 	
 	//Moving what's left (bytesLeft) of readBuffer to its beginning
@@ -152,9 +152,9 @@ int ProcessFrame() {
 	
 	//Filling the empty part of readBuffer (READ_BUFFER_SIZE - bytesLeft) back again
 	int bytesRead;
-	if (f_read(&file, readPtr, (READ_BUFFER_SIZE - bytesLeft), &bytesRead)) {
+	if(f_read(&file, readPtr, (READ_BUFFER_SIZE - bytesLeft), &bytesRead)) {
         xprintf("ERROR WHILE READING FROM THE FILE\n");
-        return -1;
+        exit(1);
     }
 
 	//If the first half of outBuffer was already played then fill it back again 
@@ -166,14 +166,12 @@ int ProcessFrame() {
 		memcpy(outBuffer + MAX_DECODED_FRAME_SIZE, frame, MAX_DECODED_FRAME_SIZE);
 	}
 	
-	//If bytesRead isn't equal (is less than) to (READ_BUFFER_SIZE - bytesLeft)
-	//then we reached the end of the file and couldn't read more
-	if((READ_BUFFER_SIZE - bytesLeft) != bytesRead) {
-		return EOF;
-	}
-	
 	//Add the total of bytes read to what was left before
 	bytesLeft += bytesRead;
+	//If there are no bytes left to read then return EOF
+	if(bytesLeft == 0) {
+		return EOF;
+	}
 	//Move readPtr back to the beginning of readBuffer
 	readPtr = readBuffer;
 

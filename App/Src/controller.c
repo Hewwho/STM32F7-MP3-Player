@@ -33,7 +33,7 @@ static char * getFilePath(void) {
 	return filePath;
 }
 
-//Used for player to signalize when the current track has finished playing
+//Used for player to change the file when the current track has finished playing
 void TrackFinished(void) {
 	xprintf("FINISHED\n");
 	if(fileIndex == files.total - 1) {
