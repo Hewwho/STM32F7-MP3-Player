@@ -166,12 +166,14 @@ int ProcessFrame() {
 		memcpy(outBuffer + MAX_DECODED_FRAME_SIZE, frame, MAX_DECODED_FRAME_SIZE);
 	}
 	
-	//Add the total of bytes read to what was left before
-	bytesLeft += bytesRead;
-	//If there are no bytes left to read then return EOF
-	if(bytesLeft == 0) {
+	//If bytesRead isn't equal (is less than) to (READ_BUFFER_SIZE - bytesLeft)
+	//then we reached the end of the file and couldn't read more
+	if((READ_BUFFER_SIZE - bytesLeft) != bytesRead) {
 		return EOF;
 	}
+	
+	//Add the total of bytes read to what was left before
+	bytesLeft += bytesRead;
 	//Move readPtr back to the beginning of readBuffer
 	readPtr = readBuffer;
 

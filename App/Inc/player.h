@@ -9,8 +9,6 @@ PlayerState GetPlayerState(void);
 
 void Play(const char *name);
 
-void ContinuePlaying(void);
-
 void Pause(void);
 
 void Resume(void);
